@@ -1,6 +1,6 @@
 ILLUSTRATIVE EXAMPLE OF A KALMAN FILTER
 ---------------------------------------------------------
-The code has been tested in:
+The code has been tested with:
 
 python 2.7.12
 
