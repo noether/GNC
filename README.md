@@ -1,4 +1,4 @@
-ILLUSTRATIVE EXAMPLE OF A KALMAN FILTER
+Notes and exercises on state estimation (Kalman filtering)
 ---------------------------------------------------------
 The code has been tested with:
 
