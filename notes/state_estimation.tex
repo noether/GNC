@@ -66,7 +66,7 @@ The \emph{normal pdf} is a popular function that approximates very well many nat
 
 Let us define the normal \emph{pdf} as
 \begin{equation}
-	g(x) = \frac{1}{\sqrt{2\pi\sigma_x^2}}\operatorname{exp}\left[\frac{(x-\hat x)^2}{2\sigma_x^2}\right],
+	g(x) = \frac{1}{\sqrt{2\pi\sigma_x^2}}\operatorname{exp}\left[\frac{(x-\hat x)^2}{2\sigma_x^2}\right], \label{eq: normpdf}
 \end{equation}
 where we plot it in Figure \ref{fig: gauss}. Note that $g(x)$ is characterized uniquely by two parameters, the expected value $\hat x$ and the variance $\sigma^2_x$.
 
@@ -172,6 +172,7 @@ y = h(q) = v_x^2 \neq H q.
 We call $y\in\mathbb{R}$ the \emph{predicted observation} (it might be a vector of course), which will be fused with the actual measurement later on. However, we note that (\ref{eq: hnl}) cannot be written as a function of a matrix $H\in\mathbb{R}^{1\times 3}$ multiplying the state $q$. Therefore, (\ref{eq: hnl}) is said to be \emph{nonlinear}. We are interested in \emph{linear observation functions} since we know that the following holds for normal \emph{pdf}'s.
 \begin{equation}
 \hat y = H \hat q,
+	\label{eq: hl}
 \end{equation}
 i.e., the predicted observation is also a normal $\emph{pdf}$, and its associated covariance
 \begin{equation}
@@ -222,5 +223,99 @@ Thus, we can extend easily (\ref{eq: fusg2bis}) to matrix form the fused mean fo
 	\label{eq: qf}
 \end{equation}
 The equations (\ref{eq: Pf}) and (\ref{eq: qf}) are typically known as the \emph{correction} step in a Kalman filter.
+
+\section{Discrete linear Kalman filter}
+\label{sec: dlkf}
+We can summarize the construction of the discrete linear Kalman filter as follows. Look carefully at the made assumptions! If one of the assumptions is not satisfied, then (rigorously speaking) you cannot continue to the next step.
+
+\begin{enumerate}
+	\item Establish the linear model (\ref{eq: st2}) describing the process that you are interested in. Our states are real numbers at this stage. {\bf We assume that the process is linear}.
+	\item We replace the representation of our states by \emph{pdf}'s. Instead of having a stacked vector of real numbers, we will have a stacked vector of \emph{pdf}'s. {\bf We assume that the variables follow a normal \emph{pdf}}.
+	\item The normal \emph{pdf} can be described by its mean and its variance as in (\ref{eq: normpdf}). We can describe the time evolution of the mean and the variance of a stacked vector of \emph{pdf}'s that goes into the process (\ref{eq: st2}) with (\ref{eq: st3}) and (\ref{eq: Pk}) respectively. Note that the uncertainty in your variables (encoded by the covariance matrix $P$) is growing over time since in (\ref{eq: Pk}) we add two positive matrices at every iteration.
+	\item If $P$ is \emph{big} (by looking at the eigenvalues of interest), then we can confine $P$ by comparing (fusing) an observation (\ref{eq: hl}) with a measurement. Again, both are represented by \emph{pdf}'s. {\bf We assume that the observation can be written as a linear function of $q$. Therefore, the observation is a (possibly a stacked vector of) normal \emph{pdf} since $q$ is a stacked vector of normal \emph{pdf}'s}. {\bf We assume that the measurement is a (possibly stacked vector of) normal \emph{pdf} as well}. Then, we can update $\hat q$ and $P$ employing (\ref{eq: qf}) and (\ref{eq: Pf}) respectively.
+\end{enumerate}
+
+\subsection{Extended discrete Kalman filter}
+The assumption on the linearity in the process and observation can be relaxed. Assume that your process is modelled by the non-linear system (\ref{eq: st}). Then, the non-linear process can be approximated by a linear one for a \emph{short} period of time, e.g., between time intervals $\Delta t$. The first order approximation of a non-linear function is done by calculating the corresponding Jacobian matrices
+\begin{equation}
+	F = \frac{\partial f(q,u)}{\partial q} \quad G =  \frac{\partial f(q,u)}{\partial u}.
+\end{equation}
+If the observation is non-linear, i.e., is modelled by (\ref{eq: hnl}), then again, we can use the first order approximation
+\begin{equation}
+	H = \frac{\partial h(q)}{\partial q}.
+\end{equation}
+
+\section{Assignments / Examples}
+Check the Python code to complete the exercises at \url{https://github.com/noether/kalman}.
+
+\subsection{Unidimensional car with a biased accelerometer}
+Consider a vehicle moving along the horizontal axis $x$. The car is equipped with an accelerometer and a GPS receptor that can measure the acceleration on the car and the position on the $x$ axes respectively. Both sensors can be characterized by a normal \emph{pdf} where we have the fixed $\sigma_{a} = 0.01 m/s^2$ and $\sigma_{\text{gps}} = 2 m$. The accelerometer can be read every millisecond, and the GPS every second. We are interested in estimating the position of the vehicle by exploiting both sensors.
+
+From physics we have that
+\begin{align}
+		x(k+1) &= x(k) + v(k)\Delta T + a(k)\frac{\Delta T^2}{2} \\
+		v(k+1) &= v(k) + a(k)\frac{\Delta T^2}{2},
+\end{align}
+where $x,v\in\mathbb{R}$ are the position and the velocity of the vehicle respectively, and $\Delta T\in\mathbb{R}$ is the time between two events (when we have a reading of the accelerometer).
+
+We further considered that our accelerometer has not been well calibrated. It has a bias $b\in\mathcal{R}$. We incorporate such a bias to the measured acceleration as follows
+\begin{equation}
+	a_m(k) = a(k) + b(k),
+	\label{eq: am}
+\end{equation}
+where $a_m$ is the reading from the accelerometer. If we further consider that the bias $b$ does not change much over during $\Delta T$, then we can model its time evolution as
+\begin{equation}
+	b(k+1) = b(k),
+\end{equation}
+i.e., it remains constant. Now we are ready to write (\ref{eq: st}) as
+\begin{equation}
+	\Sigma_1 := \begin{cases}
+		x(k+1) &= x(k) + v(k)\Delta T + \big(a_m(k) - b(k)\big) \frac{\Delta T^2}{2} \\
+		v(k+1) &= v(k) + \big(a_m(k) - b(k)\big)\frac{\Delta T^2}{2} \\
+		b(k+1) &= b(k)
+	\end{cases},\label{eq: sig1}
+\end{equation}
+where we can build our state vector $q(k) = \begin{bmatrix}x(k) & v(k) & b(k)\end{bmatrix}^T$.
+
+Check the script \url{https://github.com/noether/kalman/blob/master/python/assignment_unicar.py} for the (almost complete) implementation of the discrete linear Kalman filter in Section \ref{sec: dlkf} for the system (\ref{eq: sig1}). Try to solve or to identify in the script the following questions.
+
+\begin{enumerate}
+	\item Construct $F$ and $G$ as in (\ref{eq: st2}).
+	\item Given the variance of the accelerometer, construct $Q$ as in (\ref{eq: Pk}).
+	\item Construct $H$ as in (\ref{eq: hl}) for a GPS measurement of $x$.
+	\item For the correction step 4, construct/calculate $P_{y_m}$ as in (\ref{eq: kmat}).
+	\item Investigate $P$ whenever you have a GPS measurement available, and decide whether is worth to spend computational power in a correction.
+	\item Consider there is a radar to measure the velocity $v$. It follows a normal \emph{pdf}, same frequency as the GPS, and $\sigma_{\text{radar}} = 0.01 m/s$. Construct the associated $H$ if we apply the correction step 4 employing GPS and the radar simultaneously.
+\end{enumerate}
+
+\subsection{Unidimensional car with a accelerometer with a scale factor}
+Now, we replace (\ref{eq: am}) by
+\begin{equation}
+	a_m(k) = s(k)a(k),
+\end{equation}
+where $s(k)\in\mathbb{R}$ is a constant scale factor close to one.
+Start a new script based on the previous exercise and try to solve the following questions.
+\begin{enumerate}
+	\item Write the new (\ref{eq: st}). Is it linear? (it is not, why?).
+	\item Calculate the Jacobians of the new $f(q(k), u(k))$.
+	\item As before, you can consider GPS and velocity radar for the correction step.
+\end{enumerate}
+
+\subsection{2D localization (navigation) with range measurements}
+Check the (incomplete) script \url{https://github.com/noether/kalman/blob/master/python/assignment_localization_kalman.py}.
+
+We consider a home robot vacuum cleaner that wants to come back to its docking station. The information that we can obtain from the system is the velocity of the robot, e.g., odometry at $1$ KHz with a standard deviation of $0.1$ m/s for each velocity component. We can also measure the distance of the robot from the docking station, e.g., from a radio chip at $1$ Hz with a standard deviation of $0.3$ m.
+
+We model the robot as a kinematic point in continuous time
+\begin{equation}
+\dot p = u,
+\end{equation}
+where $p,u\in\mathbb{R}^2$ are the position of the robot with respect to the docking station and the control action on the robot respectively. Consequently, the control action $u$ commands the velocity of the robot.
+
+Consider that the state vector $q = p$. Also consider that the robot is commanded with the input signal $u = \begin{bmatrix} 5 \sin(t) \\ 10\cos(t) \end{bmatrix}$. To construct the observation function, note that the range measurement is given by $y_m = \sqrt{p^T p} = \sqrt{p_x^2 + p_y^2}$.
+
+\begin{enumerate}
+	\item Construct a {\bf discrete} linear Kalman filter to estimate the position of the robot with respect to the docking station.
+\end{enumerate}
 
 \end{document}
