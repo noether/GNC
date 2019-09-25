@@ -7,10 +7,9 @@
 \usetikzlibrary{shapes,arrows}
 \usepackage{hyperref}
 
-\title{Guidance Navigation and Control}
-\author{AUT}
-\date{Informal lecture notes for week 37, 2019}
-
+\title{Guidance Navigation and Control \\ Digested informal lecture notes on state estimation}
+\author{}
+\date{\today}
 
 \tikzstyle{block} = [draw, rectangle, minimum width=6em]
 \tikzstyle{sum} = [draw, fill=blue!20, circle, node distance=1cm]
@@ -23,14 +22,6 @@
 
 \begin{document}
 \maketitle
-\section{State estimation problem}
-
-We divide the state estimation problem in three blocks
-\begin{enumerate}
-	\item Formal representation of the states of our system
-	\item Modeling the dynamics of our states (predictions)
-	\item Particular example: Discrete Kalman Filter
-\end{enumerate}
 
 \section{Formal representation of the states of our system}
 We represent the states of our system with a vector $q$ containing as elements \emph{probability density functions} (or \emph{pdf} for short) instead of containing real numbers. We employ such representation because the \emph{pdf} contains information about the uncertainty that we might have on a property of the system, whereas a simple real number cannot encode such information. Therefore, we represent the states of our system with the column vector $q = \begin{bmatrix} f_1 & f_2 & \dots & f_n \end{bmatrix}^T$, where $n$ is the number of states of the system, and $f_n$ are the different \emph{pdfs} (to be defined shortly) associated to each of our states.
@@ -166,7 +157,7 @@ The covariance $CoVar(x,y) = 0$ means that $x$ and $y$ are not correlated, i.e.,
 
 Note that $Q$ in (\ref{eq: Pk}) is a diagonal matrix if there are no correlations between the inputs. The diagonal elements of $Q$ are just $\sigma^2_{u_i}, i\in\{1,\dots,p\}$. Therefore, we can predict the evolution in (discrete) time of a normal distribution by iterating (\ref{eq: st2}) for the expected value of $q$ and (\ref{eq: Pk}) for the variance of $q$.
 
-\section{Measurements. Inputs \& observations in linear systems}
+\section{Measurements: Inputs \& observations in linear systems}
 Equations (\ref{eq: st3}) and (\ref{eq: Pk}) indicate how the \emph{pdf}'s associated to the states $q$ evolve \textbf{if} the \emph{pdf}'s are normal, and the process that we consider can be modelled as a linear system. Therefore, we can make predictions over time starting from an initial \emph{pdf}. In particular from the initials $\hat q(0)$ and $P(0)$.
 
 We can employ measurements for both, to make predictions and to improve/update the information that carries our \emph{pdf}. If the measurements are employed to predict in (\ref{eq: st}), then they are considered \emph{inputs}. If the measurements are compared with a prediction, then they are considered as \emph{observations}.
@@ -188,7 +179,7 @@ i.e., the predicted observation is also a normal $\emph{pdf}$, and its associate
 \end{equation}
 The actual measurement must be also associated to a $\emph{pdf}$, therefore it will be described by the corresponding $\hat y_m$ and $P_{y_m}$. The covariance matrix $P_{y_m}$ is also known as $R$ in the literature, the \emph{measurement noise}.
 
-\subsection{Sensor fusion. Kalman gain}
+\subsection{Kalman gain and sensor fusion of normal distributions}
 Let us rewrite again (\ref{eq: fusg}) and (\ref{eq: fusg2})
 
 \begin{equation}
@@ -205,19 +196,25 @@ Let us rewrite again (\ref{eq: fusg}) and (\ref{eq: fusg2})
 	\end{cases},
 	\label{eq: fusg2bis}
 \end{equation}
-where $k = \frac{\sigma_{x_1}^2}{\sigma_{x_1}^2 + \sigma_{x_2}^2}$. These (\ref{eq: fusgbis}) and (\ref{eq: fusg2bis}) have been derived for the unidimensional case, i.e., we fused two normal \emph{pdf}'s. Now $\hat q$ is a vector, and $P$ is a matrix, instead of $\hat x$ and $\sigma_x^2$. Let us consider the subscript $1$ as our prediction, and $2$ as our measurement to extend (\ref{eq: fusg2bis}) in matrix form. We first note that $\sigma_{x_1}^2$ would be extended to $P_y = HPH^T$ and $\sigma_{x_2}^2$ would be extended to $P_{y_m}$. Therefore we can extend $k$ as
+where 
 \begin{equation}
-K = HPH^T (P_y + P_{y_m})^{-1},
+k = \frac{\sigma_{x_1}^2}{\sigma_{x_1}^2 + \sigma_{x_2}^2}.
+	\label{eq: kuni}
 \end{equation}
-so we can extend the second equation in (\ref{eq: fusg2bis}) as
+These (\ref{eq: fusgbis}) and (\ref{eq: fusg2bis}) have been derived for the unidimensional case, i.e., we fused two normal \emph{pdf}'s. Now $\hat q$ is a vector, and $P$ is a matrix, instead of $\hat x$ and $\sigma_x^2$. Let us consider the subscript $1$ as our prediction, and $2$ as our measurement to extend (\ref{eq: fusg2bis}) in matrix form. We first note that $\sigma_{x_1}^2$ would be extended to the matrix form $P_y = HPH^T$ and, similarly, $\sigma_{x_2}^2$ would be extended to the matrix form $P_{y_m}$. Therefore we can extend $k$ in (\ref{eq: kuni}) to the following matrix form
+\begin{align}
+	P_y (P_y + P_{y_m})^{-1} &= HPH^T (P_y + P_{y_m})^{-1} \nonumber \\
+	&= HK. \label{eq: kmat}
+\end{align}
+We note that for the unidimensional $q\in\mathbb{R}$ case where we compare an unidimensional observation with an unidimensional measurement, then we have that $H=1$, hence (\ref{eq: kuni}) can be derived from the general \emph{Kalman gain} (\ref{eq: kmat}). Now we can extend the second equation in (\ref{eq: fusg2bis}) as
 \begin{align}
 	HP_fH^T &= HPH^T -  HPH^T (P_y + P_{y_m})^{-1} HPH^T,
 	\label{eq: e}
 \end{align}
-and noting that we are multiplying by $H$ and $H^T$ at the right and left-hand sides of each term in (\ref{eq: e}), then we have that
+and noting that we are multiplying by $H^T$ and $H$ at the right and left-hand sides of each term in (\ref{eq: e}), then we have that
 \begin{align}
 	P_f &= P - PH^T(P_y + P_{y_m})^{-1} HP \nonumber \\
-	P_f &= P - KHP. \label{eq: Pf}
+	&= P - KHP. \label{eq: Pf}
 \end{align}
 Thus, we can extend easily (\ref{eq: fusg2bis}) to matrix form the fused mean for the state $q$ as
 \begin{equation}
