@@ -11,7 +11,7 @@ it = 0 # current iteration in the for loop
 frames = 100 # We draw the plots once per 100 iterations, i.e., every 0.1 seconds.
 
 # Set initial conditions for the Kalman Filter
-X_hat = np.random.uniform(-10, 10, 2) # Random 2x1 vector from -10 to 10
+q_hat = np.random.uniform(-10, 10, 2) # Random 2x1 vector from -10 to 10
 P = np.array([[5, 0], \
               [0, 5]])
 
@@ -20,7 +20,7 @@ sigma_r =  # range measurement
 sigma_u =  # velocities as inputs
 
 # Data log
-X_hat_log = np.zeros((time.size, X_hat.size))
+q_hat_log = np.zeros((time.size, X_hat.size))
 P_log = np.zeros((time.size, P.size))
 
 # Plotting stuff
@@ -41,11 +41,11 @@ for t in time:
     v = np.array([5*np.sin(t), 10*np.cos(t)])
     p = p + v*dt
 
-    # Simulation with the Lyapunov controller ( Exercise II ). Do not forget to comment the above two lines
+    # Simulation with the Lyapunov controller. Do not forget to comment the above two lines
     # c = # Controller
     # p = p + c*dt
 
-    # KALMAN FILTER
+    # Discrete linear KALMAN filter
     if it%1 == 0:
         # Transition matrices
         F = # set F
@@ -53,26 +53,25 @@ for t in time:
         G = # set G
 
         # Process noise
-        Q =
+        Q = # set Q
 
         # Dynamics of the Gaussian states (mean and variances)
-        u = v
+        u = # set u
 
-        X_hat = # Eq. (2)
-        P = # Eq. (3)
+        q_hat = # Eq. (11)
+        P = # Eq. (17)
 
         # Update after a range measurement (any other suggestions about when to update?)
         if it%1000 == 0:
 
-            H = # Eq. (4)
-            R = 
-            K = # Eq. (5)
+            H = # Eq. (19) or Eq. (29)
+            Pym = # set P_ym.
+            K = # Eq. (24)
 
-            e = la.norm(p) - la.norm(X) # e = r - h(\hat x) in Eq. (6)
-            X_hat_u = # Eq. (6)
-            P_u = # Eq. (7)
+            q_hat_u = # Eq. (27)
+            P_u = # Eq. (26)
 
-            X_hat = X_hat_u
+            q_hat = q_hat_u
             P = P_u
 
     # Animation
@@ -118,7 +117,7 @@ for t in time:
         pl.pause(0.001)
 
     # Log
-    X_hat_log[it,:] = X_hat
+    q_hat_log[it,:] = q_hat
     P_log[it,:] = P.reshape((1,4))
 
     it = it + 1
