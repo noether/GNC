@@ -88,7 +88,7 @@ for t in time:
         S = H1obs.dot(P).dot(H1obs.transpose()) + P1ym
         if np.size(S) == 1:
             K = P.dot(H1obs.transpose())/S
-            P = P - np.outer(K, H1.dot(P))
+            P = P - np.outer(K, H1obs.dot(P))
         else:
             K = P.dot(H1obs.transpose()).dot(la.inv(S))
             P = P - K.dot(H1obs.dot(P))
