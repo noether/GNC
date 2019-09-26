@@ -14,7 +14,7 @@ it = 0;
 frames = 100
 
 # States
-q = np.array([0, 0, 0])
+q = np.array([[0],[0],[0]])
 P = np.array([[1, 0, 0], \
               [0,  1, 0], \
               [0,  0, 1]])
@@ -22,7 +22,7 @@ P = np.array([[1, 0, 0], \
 F = np.array([[1, dt, -0.5*dt*dt], \
               [0,  1,-dt], \
               [0,  0, 1]])
-G = np.array([0.5*dt*dt, dt, 0])
+G = np.array([[0.5*dt*dt], [dt], [0]])
 
 
 # Measurements
@@ -34,8 +34,8 @@ acc_bias = 0.7
 gps_sigma = 2
 radar_sigma = 0.01
 
-H1obs = np.array([1, 0, 0])
-H2obs = np.array([0, 1, 0])
+H1obs = np.array([[1, 0, 0]])
+H2obs = np.array([[0, 1, 0]])
 H3obs = np.array([[1, 0, 0], \
                [0, 1, 0]])
 
@@ -44,7 +44,7 @@ H2mes = np.array([1])
 H3mes = np.array([[1, 0], \
                   [0, 1]])
 
-Q = np.outer(G*acc_sigma,acc_sigma*G.transpose())
+Q = acc_sigma*acc_sigma
 P1ym = (H1mes*gps_sigma).dot(gps_sigma*H1mes.transpose())
 P2ym = (H2mes*radar_sigma).dot(radar_sigma*H2mes.transpose())
 P3ym = (H3mes.dot(np.array([gps_sigma, radar_sigma]))).dot((np.array([gps_sigma, radar_sigma]).transpose()).dot(H3mes.transpose()))
@@ -75,25 +75,25 @@ xlimits2 = np.linspace(-xbl, xbl, 300)
 for t in time:
 
     acc = np.random.normal(acc_bias, acc_sigma)
-    
+
     # Propagation
     q = F.dot(q) + G.dot(acc)
-    P = F.dot(P).dot(F.transpose()) + Q
+    P = F.dot(P).dot(F.transpose()) + G.dot(Q).dot(G.T)
 
     # Correction (measurements)
     if it%1000 == 0:
         q_saved = q
         P_saved = P
 
-        S = H1obs.dot(P).dot(H1obs.transpose()) + P1ym
+        S = H1obs.dot(P).dot(H1obs.T) + P1ym # S = Py + Pym
         if np.size(S) == 1:
-            K = P.dot(H1obs.transpose())/S
-            P = P - np.outer(K, H1obs.dot(P))
+            K = P.dot(H1obs.T)/S
         else:
-            K = P.dot(H1obs.transpose()).dot(la.inv(S))
-            P = P - K.dot(H1obs.dot(P))
-        
-        q = q + K*(H1mes.dot(GPS) - H1obs.dot(q))
+            K = P.dot(H1obs.T).dot(la.inv(S))
+
+        P = P - K.dot(H1obs.dot(P))
+        q = q + K.dot((H1mes.dot(GPS) - H1obs.dot(q)))
+
         if not np.all(la.eigvals(P) > 0):
             q = q_saved
             P = P_saved
@@ -158,7 +158,7 @@ for t in time:
             pl.savefig("./images/%s.png"%namepic)
 
     # Log
-    q_log[it,:] = q
+    q_log[it,:] = q.reshape((1,3))
     P_log[it,:] = P.reshape((1,9))
     acc_log[it] = acc
 
