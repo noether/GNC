@@ -34,20 +34,20 @@ acc_bias = 0.7
 gps_sigma = 2
 radar_sigma = 0.01
 
-H1 = np.array([1, 0, 0])
-H2 = np.array([0, 1, 0])
-H3 = np.array([[1, 0, 0], \
+H1obs = np.array([1, 0, 0])
+H2obs = np.array([0, 1, 0])
+H3obs = np.array([[1, 0, 0], \
                [0, 1, 0]])
 
-H1obs = np.array([1])
-H2obs = np.array([1])
-H3obs = np.array([[1, 0], \
+H1mes = np.array([1])
+H2mes = np.array([1])
+H3mes = np.array([[1, 0], \
                   [0, 1]])
 
 Q = np.outer(G*acc_sigma,acc_sigma*G.transpose())
-R1 = (H1obs*gps_sigma).dot(gps_sigma*H1obs.transpose())
-R2 = (H2obs*radar_sigma).dot(radar_sigma*H2obs.transpose())
-R3 = (H3obs.dot(np.array([gps_sigma, radar_sigma]))).dot((np.array([gps_sigma, radar_sigma]).transpose()).dot(H3obs.transpose()))
+P1ym = (H1mes*gps_sigma).dot(gps_sigma*H1mes.transpose())
+P2ym = (H2mes*radar_sigma).dot(radar_sigma*H2mes.transpose())
+P3ym = (H3mes.dot(np.array([gps_sigma, radar_sigma]))).dot((np.array([gps_sigma, radar_sigma]).transpose()).dot(H3mes.transpose()))
 
 
 # Data log
@@ -85,15 +85,15 @@ for t in time:
         q_saved = q
         P_saved = P
 
-        S = H1.dot(P).dot(H1.transpose()) + R1
+        S = H1obs.dot(P).dot(H1obs.transpose()) + P1ym
         if np.size(S) == 1:
-            K = P.dot(H1.transpose())/S
+            K = P.dot(H1obs.transpose())/S
             P = P - np.outer(K, H1.dot(P))
         else:
-            K = P.dot(H1.transpose()).dot(la.inv(S))
-            P = P - K.dot(H1.dot(P))
+            K = P.dot(H1obs.transpose()).dot(la.inv(S))
+            P = P - K.dot(H1obs.dot(P))
         
-        q = q + K*(H1obs.dot(GPS) - H1.dot(q))
+        q = q + K*(H1mes.dot(GPS) - H1obs.dot(q))
         if not np.all(la.eigvals(P) > 0):
             q = q_saved
             P = P_saved
