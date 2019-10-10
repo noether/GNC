@@ -11,7 +11,7 @@ it = 0 # current iteration in the for loop
 frames = 100 # We draw the plots once per 100 iterations, i.e., every 0.1 seconds.
 
 # Set initial conditions for the Kalman Filter
-q_hat = np.random.uniform(-10, 10, 2) # Random 2x1 vector from -10 to 10
+q_hat = np.random.uniform(-10, 10, (2,1)) # Random 2x1 vector from -10 to 10
 P = np.array([[5, 0], \
               [0, 5]])
 
@@ -33,12 +33,12 @@ xlimits0 = np.linspace(-xpx, xpx, 300)
 xlimits1 = np.linspace(-ypx, ypx, 300)
 
 # Initial position
-p = np.array([0, 0])
+p = np.array([[0], [0]])
 
 for t in time:
 
     # Simulation of the mobile robot
-    v = np.array([5*np.sin(t), 10*np.cos(t)])
+    v = np.array([[5*np.sin(t)], [10*np.cos(t)]])
     p = p + v*dt
 
     # Simulation with the Lyapunov controller. Do not forget to comment the above two lines
@@ -117,7 +117,7 @@ for t in time:
         pl.pause(0.001)
 
     # Log
-    q_hat_log[it,:] = q_hat
+    q_hat_log[it,:] = q_hat.reshape((1,2))
     P_log[it,:] = P.reshape((1,4))
 
     it = it + 1

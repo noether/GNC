@@ -14,7 +14,7 @@ it = 0;
 frames = 100
 
 # States
-q = np.array([0, 0, 0])
+q_hat = np.array([[0],[0],[0]])
 P = np.array([[1, 0, 0], \
               [0,  1, 0], \
               [0,  0, 1]])
@@ -22,7 +22,7 @@ P = np.array([[1, 0, 0], \
 F = np.array([[1, dt, -0.5*dt*dt], \
               [0,  1,-dt], \
               [0,  0, 1]])
-G = np.array([0.5*dt*dt, dt, 0])
+G = np.array([[0.5*dt*dt], [dt], [0]])
 
 
 # Measurements
@@ -34,25 +34,25 @@ acc_bias = 0.7
 gps_sigma = 2
 radar_sigma = 0.01
 
-H1 = np.array([1, 0, 0])
-H2 = np.array([0, 1, 0])
-H3 = np.array([[1, 0, 0], \
+H1obs = np.array([[1, 0, 0]])
+H2obs = np.array([[0, 1, 0]])
+H3obs = np.array([[1, 0, 0], \
                [0, 1, 0]])
 
-H1obs = np.array([1])
-H2obs = np.array([1])
-H3obs = np.array([[1, 0], \
+H1mes = np.array([1])
+H2mes = np.array([1])
+H3mes = np.array([[1, 0], \
                   [0, 1]])
 
-Q = np.outer(G*acc_sigma,acc_sigma*G.transpose())
-R1 = (H1obs*gps_sigma).dot(gps_sigma*H1obs.transpose())
-R2 = (H2obs*radar_sigma).dot(radar_sigma*H2obs.transpose())
-R3 = (H3obs.dot(np.array([gps_sigma, radar_sigma]))).dot((np.array([gps_sigma, radar_sigma]).transpose()).dot(H3obs.transpose()))
+Q = acc_sigma*acc_sigma
+P1ym = (H1mes*gps_sigma).dot(gps_sigma*H1mes.transpose())
+P2ym = (H2mes*radar_sigma).dot(radar_sigma*H2mes.transpose())
+P3ym = (H3mes.dot(np.array([gps_sigma, radar_sigma]))).dot((np.array([gps_sigma, radar_sigma]).transpose()).dot(H3mes.transpose()))
 
 
 # Data log
 acc_log = np.zeros(time.size)
-q_log = np.zeros((time.size, q.size))
+q_hat_log = np.zeros((time.size, q_hat.size))
 P_log = np.zeros((time.size, P.size))
 
 # Plotting stuff
@@ -75,34 +75,34 @@ xlimits2 = np.linspace(-xbl, xbl, 300)
 for t in time:
 
     acc = np.random.normal(acc_bias, acc_sigma)
-    
+
     # Propagation
-    q = F.dot(q) + G.dot(acc)
-    P = F.dot(P).dot(F.transpose()) + Q
+    q_hat = F.dot(q_hat) + G.dot(acc)
+    P = F.dot(P).dot(F.transpose()) + G.dot(Q).dot(G.T)
 
     # Correction (measurements)
     if it%1000 == 0:
-        q_saved = q
+        q_hat_saved = q_hat
         P_saved = P
 
-        S = H1.dot(P).dot(H1.transpose()) + R1
+        S = H1obs.dot(P).dot(H1obs.T) + P1ym # S = Py + Pym
         if np.size(S) == 1:
-            K = P.dot(H1.transpose())/S
-            P = P - np.outer(K, H1.dot(P))
+            K = P.dot(H1obs.T)/S
         else:
-            K = P.dot(H1.transpose()).dot(la.inv(S))
-            P = P - K.dot(H1.dot(P))
-        
-        q = q + K*(H1obs.dot(GPS) - H1.dot(q))
+            K = P.dot(H1obs.T).dot(la.inv(S))
+
+        P = P - K.dot(H1obs.dot(P))
+        q_hat = q_hat + K.dot((H1mes.dot(GPS) - H1obs.dot(q_hat)))
+
         if not np.all(la.eigvals(P) > 0):
-            q = q_saved
+            q_hat = q_hat_saved
             P = P_saved
 
     # Animation
     if it%frames == 0:
         axis[0].clear()
         axis[0].grid("on")
-        pgauss = mlab.normpdf(xlimits0, q[0], np.sqrt(P[0,0]))
+        pgauss = mlab.normpdf(xlimits0, q_hat[0], np.sqrt(P[0,0]))
         axis[0].plot(xlimits0, pgauss)
         axis[0].fill_between(xlimits0, pgauss, color='cyan')
         axis[0].set_xlim([-xpl, xpl])
@@ -115,7 +115,7 @@ for t in time:
 
         axis[1].clear()
         axis[1].grid("on")
-        vgauss = mlab.normpdf(xlimits1, q[1], np.sqrt(P[1,1]))
+        vgauss = mlab.normpdf(xlimits1, q_hat[1], np.sqrt(P[1,1]))
         axis[1].plot(xlimits1, vgauss)
         axis[1].fill_between(xlimits1, vgauss, color='cyan')
         axis[1].set_xlim([-xvl, xvl])
@@ -128,7 +128,7 @@ for t in time:
 
         axis[2].clear()
         axis[2].grid("on")
-        bgauss = mlab.normpdf(xlimits2, q[2], np.sqrt(P[2,2]))
+        bgauss = mlab.normpdf(xlimits2, q_hat[2], np.sqrt(P[2,2]))
         axis[2].plot(xlimits2, bgauss)
         axis[2].fill_between(xlimits2, bgauss, color='cyan')
         axis[2].set_xlim([-xbl, xbl])
@@ -142,7 +142,7 @@ for t in time:
         axis[3].clear()
         axis[3].grid("on")
         axis[3].plot(time[0:it], acc_log[0:it], 'r')
-        axis[3].plot(time[0:it], q_log[0:it,2], 'b')
+        axis[3].plot(time[0:it], q_hat_log[0:it,2], 'b')
         axis[3].set_xlim([0, tf])
         axis[3].set_ylim([0, 1.5*acc_bias])
         axis[3].set_title("Accelerometer readings & estimated bias")
@@ -158,7 +158,7 @@ for t in time:
             pl.savefig("./images/%s.png"%namepic)
 
     # Log
-    q_log[it,:] = q
+    q_hat_log[it,:] = q_hat.reshape((1,3))
     P_log[it,:] = P.reshape((1,9))
     acc_log[it] = acc
 

@@ -249,12 +249,12 @@ If the observation is non-linear, i.e., is modelled by (\ref{eq: hnl}), then aga
 Check the Python code to complete the exercises at \url{https://github.com/noether/kalman}.
 
 \subsection{Unidimensional car with a biased accelerometer}
-Consider a vehicle moving along the horizontal axis $x$. The car is equipped with an accelerometer and a GPS receptor that can measure the acceleration on the car and the position on the $x$ axes respectively. Both sensors can be characterized by a normal \emph{pdf} where we have the fixed $\sigma_{a} = 0.01 m/s^2$ and $\sigma_{\text{gps}} = 2 m$. The accelerometer can be read every millisecond, and the GPS every second. We are interested in estimating the position of the vehicle by exploiting both sensors.
+Consider a vehicle moving along the horizontal axis $x$. The car is equipped with an accelerometer and a GPS receptor that can measure the acceleration on the car and the position on the $x$ axis respectively. Both sensors can be characterized by a normal \emph{pdf} where we have the fixed $\sigma_{a} = 0.01 m/s^2$ and $\sigma_{\text{gps}} = 2 m$. The accelerometer can be read every millisecond, and the GPS every second. We are interested in estimating the position of the vehicle by exploiting both sensors.
 
 From physics we have that
 \begin{align}
 		x(k+1) &= x(k) + v(k)\Delta T + a(k)\frac{\Delta T^2}{2} \\
-		v(k+1) &= v(k) + a(k)\frac{\Delta T^2}{2},
+		v(k+1) &= v(k) + a(k)\Delta T,
 \end{align}
 where $x,v\in\mathbb{R}$ are the position and the velocity of the vehicle respectively, and $\Delta T\in\mathbb{R}$ is the time between two events (when we have a reading of the accelerometer).
 
@@ -271,7 +271,7 @@ i.e., it remains constant. Now we are ready to write (\ref{eq: st}) as
 \begin{equation}
 	\Sigma_1 := \begin{cases}
 		x(k+1) &= x(k) + v(k)\Delta T + \big(a_m(k) - b(k)\big) \frac{\Delta T^2}{2} \\
-		v(k+1) &= v(k) + \big(a_m(k) - b(k)\big)\frac{\Delta T^2}{2} \\
+		v(k+1) &= v(k) + \big(a_m(k) - b(k)\big)\Delta T \\
 		b(k+1) &= b(k)
 	\end{cases},\label{eq: sig1}
 \end{equation}
@@ -288,7 +288,7 @@ Check the script \url{https://github.com/noether/kalman/blob/master/python/assig
 	\item Consider there is a radar to measure the velocity $v$. It follows a normal \emph{pdf}, same frequency as the GPS, and $\sigma_{\text{radar}} = 0.01 m/s$. Construct the associated $H$ if we apply the correction step 4 employing GPS and the radar simultaneously.
 \end{enumerate}
 
-\subsection{Unidimensional car with a accelerometer with a scale factor}
+\subsection{Unidimensional car with an accelerometer with a scale factor}
 Now, we replace (\ref{eq: am}) by
 \begin{equation}
 	a_m(k) = s(k)a(k),
